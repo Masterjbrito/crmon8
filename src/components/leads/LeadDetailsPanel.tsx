@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Lead } from "@/types/lead";
 import { toast } from "sonner";
 import * as Dialog from "@radix-ui/react-dialog";
@@ -25,9 +25,27 @@ interface Props {
   onRefresh: () => void;
 }
 
+// All lead detail fields from original GAS
+const DETAIL_FIELDS: { key: keyof Lead; label: string }[] = [
+  { key: "Email", label: "Email" },
+  { key: "Phone", label: "Telemóvel" },
+  { key: "Zone", label: "Zona" },
+  { key: "Situation", label: "Situação" },
+  { key: "Typology", label: "Tipologia" },
+  { key: "Construction method", label: "Método Construção" },
+  { key: "Timeframe", label: "Prazo" },
+  { key: "Budget", label: "Orçamento" },
+  { key: "Preferred contact", label: "Contacto Preferido" },
+  { key: "Preferred time", label: "Hora Preferida" },
+  { key: "Data Receção", label: "Data Receção" },
+  { key: "Ultima Modificacao", label: "Última Modificação" },
+];
+
 export default function LeadDetailsPanel({ lead, companyId, onClose, onRefresh }: Props) {
   const [currentStatus, setCurrentStatus] = useState(lead.Status || "Pendente");
   const [changingStatus, setChangingStatus] = useState(false);
+  const [emailRefreshKey, setEmailRefreshKey] = useState(0);
+  const [timelineRefreshKey, setTimelineRefreshKey] = useState(0);
 
   const handleStatusChange = async (newStatus: string) => {
     if (newStatus === currentStatus) return;
@@ -41,6 +59,7 @@ export default function LeadDetailsPanel({ lead, companyId, onClose, onRefresh }
       if (res.ok) {
         setCurrentStatus(newStatus);
         toast.success(`Status alterado para ${newStatus}`);
+        setTimelineRefreshKey((k) => k + 1);
         onRefresh();
       } else {
         toast.error("Erro ao alterar status");
@@ -52,18 +71,31 @@ export default function LeadDetailsPanel({ lead, companyId, onClose, onRefresh }
     }
   };
 
+  // After sending email: refresh thread, timeline, mark as Contactado
+  const handleEmailSent = useCallback(async () => {
+    setEmailRefreshKey((k) => k + 1);
+    setTimelineRefreshKey((k) => k + 1);
+    // Auto-set to Contactado like original GAS enviarEmailManual
+    if (currentStatus === "Pendente") {
+      await handleStatusChange("Contactado");
+    }
+    onRefresh();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentStatus]);
+
   return (
     <Dialog.Root open onOpenChange={(open) => !open && onClose()}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/30 z-40" />
-        <Dialog.Content className="fixed top-0 right-0 h-full w-full sm:w-[550px] bg-white z-50 shadow-2xl lead-panel-border overflow-y-auto focus:outline-none">
-          <div className="border-b p-4 flex items-start justify-between">
+        <Dialog.Content className="fixed top-0 right-0 h-full w-full sm:w-[580px] bg-white z-50 shadow-2xl lead-panel-border overflow-y-auto focus:outline-none">
+          {/* Header */}
+          <div className="border-b p-4 flex items-start justify-between bg-gradient-to-r from-gray-50 to-white">
             <div>
               <Dialog.Title className="font-bold text-lg">
                 {lead.Name || "Sem Nome"}
               </Dialog.Title>
-              <p className="text-sm text-gray-500">
-                ID: {lead["ID Lead"] || "---"}
+              <p className="text-sm text-gray-500 font-mono">
+                {lead["ID Lead"] || "---"}
               </p>
             </div>
             <Dialog.Close asChild>
@@ -74,35 +106,26 @@ export default function LeadDetailsPanel({ lead, companyId, onClose, onRefresh }
           </div>
 
           <div className="p-4">
-            {/* Core Info */}
-            <div className="bg-gray-50 rounded-xl p-3 mb-4">
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <div>
-                  <span className="font-bold text-gray-500 text-xs">Email</span>
-                  <br />
-                  {lead.Email || "---"}
-                </div>
-                <div>
-                  <span className="font-bold text-gray-500 text-xs">Telemóvel</span>
-                  <br />
-                  {lead.Phone || "---"}
-                </div>
-                <div>
-                  <span className="font-bold text-gray-500 text-xs">Zona</span>
-                  <br />
-                  {lead.Zone || "---"}
-                </div>
-                <div>
-                  <span className="font-bold text-gray-500 text-xs">Tipologia</span>
-                  <br />
-                  {lead.Typology || "---"}
-                </div>
+            {/* Full Lead Detail - All 13 fields */}
+            <div className="bg-gray-50 rounded-xl p-4 mb-4">
+              <h6 className="text-xs font-bold text-gray-400 uppercase mb-3">Informação da Lead</h6>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
+                {DETAIL_FIELDS.map((f) => {
+                  const val = lead[f.key];
+                  if (!val) return null;
+                  return (
+                    <div key={f.key} className="text-sm">
+                      <span className="font-semibold text-gray-500 text-xs block">{f.label}</span>
+                      <span className="text-gray-800">{String(val)}</span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
-            {/* Status Dropdown */}
+            {/* Status Pills */}
             <div className="mb-4">
-              <label className="text-xs font-bold text-gray-500 uppercase block mb-1.5">
+              <label className="text-xs font-bold text-gray-400 uppercase block mb-1.5">
                 Status
               </label>
               <div className="flex flex-wrap gap-1.5">
@@ -147,16 +170,16 @@ export default function LeadDetailsPanel({ lead, companyId, onClose, onRefresh }
 
               <div className="tab-content-on8">
                 <Tabs.Content value="historico">
-                  <LeadTimeline lead={lead} companyId={companyId} />
+                  <LeadTimeline key={timelineRefreshKey} lead={lead} companyId={companyId} />
                 </Tabs.Content>
                 <Tabs.Content value="emails">
-                  <EmailThread leadId={lead["ID Lead"]} />
+                  <EmailThread key={emailRefreshKey} leadId={lead["ID Lead"]} />
                 </Tabs.Content>
                 <Tabs.Content value="enviar">
                   <EmailComposer
                     lead={lead}
                     companyId={companyId}
-                    onSent={onRefresh}
+                    onSent={handleEmailSent}
                   />
                 </Tabs.Content>
                 <Tabs.Content value="notas">

@@ -36,23 +36,38 @@ export default function EmailThread({ leadId }: Props) {
     fetchEmails();
   }, [leadId]);
 
-  if (loading) return <p className="text-sm text-gray-400 p-3">A carregar emails...</p>;
+  if (loading) {
+    return (
+      <div className="timeline-container space-y-3 animate-pulse">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} className="h-24 bg-gray-100 rounded-lg" />
+        ))}
+      </div>
+    );
+  }
 
-  if (emails.length === 0) return <p className="text-sm text-gray-400 p-3">Sem emails.</p>;
+  if (emails.length === 0) {
+    return (
+      <div className="text-center py-8">
+        <div className="text-3xl opacity-20 mb-2">📧</div>
+        <p className="text-sm text-gray-400">Sem emails trocados com esta lead.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="timeline-container">
       {emails.map((e) => (
         <div
           key={e.id}
-          className="bg-gray-50 p-3 rounded-lg mb-3 border border-gray-200"
+          className="bg-[#f8fafc] p-3 rounded-lg mb-3 border border-[#e2e8f0]"
         >
-          <div className="text-xs text-gray-400 mb-1.5">
-            <strong>De:</strong> {e.from} &nbsp; <strong>Data:</strong> {e.date}
+          <div className="text-xs text-[#64748b] mb-1.5 flex flex-wrap gap-x-4">
+            <span><strong>De:</strong> {e.from}</span>
+            <span><strong>Para:</strong> {e.to}</span>
+            <span><strong>Data:</strong> {e.date}</span>
           </div>
-          <div
-            className="text-sm text-gray-700 whitespace-pre-wrap"
-          >
+          <div className="text-[13px] text-[#334155] whitespace-pre-wrap leading-relaxed">
             {e.body}
           </div>
         </div>
