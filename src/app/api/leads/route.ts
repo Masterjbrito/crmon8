@@ -8,26 +8,37 @@ export async function GET(req: NextRequest) {
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const accessToken = (session as any).accessToken;
-  const companyId = req.nextUrl.searchParams.get("companyId") || "on8-living";
+  if (!accessToken) {
+    console.error("[leads] No accessToken in session");
+    return NextResponse.json({ error: "No access token" }, { status: 401 });
+  }
 
+  const companyId = req.nextUrl.searchParams.get("companyId") || "on8-living";
   const company = getCompany(companyId);
   if (!company) return NextResponse.json({ error: "Company not found" }, { status: 404 });
 
-  // If parent company, aggregate from all children
-  if (company.isParent) {
-    const children = getChildCompanies();
-    const allLeads = [];
-    for (const child of children) {
-      if (child.sheetId) {
-        const leads = await getLeads(accessToken, child.sheetId);
-        allLeads.push(...leads.map((l) => ({ ...l, companyId: child.id })));
+  try {
+    if (company.isParent) {
+      const children = getChildCompanies();
+      const allLeads = [];
+      for (const child of children) {
+        if (child.sheetId) {
+          const leads = await getLeads(accessToken, child.sheetId);
+          allLeads.push(...leads.map((l) => ({ ...l, companyId: child.id })));
+        }
       }
+      return NextResponse.json(allLeads);
     }
-    return NextResponse.json(allLeads);
+
+    if (!company.sheetId) return NextResponse.json([]);
+
+    const leads = await getLeads(accessToken, company.sheetId);
+    return NextResponse.json(leads.map((l) => ({ ...l, companyId })));
+  } catch (error: any) {
+    console.error("[leads] Error fetching leads:", error?.message || error);
+    return NextResponse.json(
+      { error: "Failed to fetch leads", detail: error?.message },
+      { status: 500 }
+    );
   }
-
-  if (!company.sheetId) return NextResponse.json([]);
-
-  const leads = await getLeads(accessToken, company.sheetId);
-  return NextResponse.json(leads.map((l) => ({ ...l, companyId })));
 }

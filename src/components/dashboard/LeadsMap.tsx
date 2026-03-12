@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Lead } from "@/types/lead";
 
 const ZONES: Record<string, [number, number]> = {
@@ -23,16 +23,41 @@ interface Props {
 export default function LeadsMap({ leads }: Props) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<any>(null);
+  const [mounted, setMounted] = useState(false);
+
+  // Wait for mount to avoid Strict Mode double-init
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
-    if (!mapRef.current || mapInstance.current) return;
+    if (!mounted || !mapRef.current) return;
+
+    // If already initialized, just update markers
+    if (mapInstance.current) {
+      const loadL = async () => {
+        const L = (await import("leaflet")).default;
+        updateMarkers(L, mapInstance.current, leads);
+      };
+      loadL();
+      return;
+    }
+
+    let cancelled = false;
 
     const initMap = async () => {
       const L = (await import("leaflet")).default;
-      // @ts-ignore - CSS import for leaflet styles
+      // @ts-ignore
       await import("leaflet/dist/leaflet.css");
 
-      const map = L.map(mapRef.current!, { zoomControl: false }).setView(
+      if (cancelled || !mapRef.current) return;
+
+      // Guard: check if container already has a map (Strict Mode remount)
+      if ((mapRef.current as any)._leaflet_id) {
+        return;
+      }
+
+      const map = L.map(mapRef.current, { zoomControl: false }).setView(
         [39.5, -8.1],
         6.3
       );
@@ -48,22 +73,14 @@ export default function LeadsMap({ leads }: Props) {
     initMap();
 
     return () => {
+      cancelled = true;
       if (mapInstance.current) {
         mapInstance.current.remove();
         mapInstance.current = null;
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    if (!mapInstance.current) return;
-    const loadLeaflet = async () => {
-      const L = (await import("leaflet")).default;
-      updateMarkers(L, mapInstance.current, leads);
-    };
-    loadLeaflet();
-  }, [leads]);
+  }, [mounted, leads]);
 
   return (
     <div className="card-on8">
@@ -76,7 +93,6 @@ export default function LeadsMap({ leads }: Props) {
 }
 
 function updateMarkers(L: any, map: any, leads: Lead[]) {
-  // Clear existing markers
   map.eachLayer((layer: any) => {
     if (layer instanceof L.Marker) map.removeLayer(layer);
   });
