@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
@@ -25,9 +26,16 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#0f172a]">
       <div className="bg-white rounded-2xl shadow-2xl p-10 max-w-sm w-full text-center">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-[#0f172a] tracking-tight">ON8 CRM</h1>
-          <p className="text-gray-500 text-sm mt-2">Gestor de Leads Multi-Empresa</p>
+        <div className="mb-8 flex flex-col items-center">
+          <Image
+            src="/logos/on8.jpg"
+            alt="ON8"
+            width={80}
+            height={80}
+            className="rounded-2xl mb-4"
+          />
+          <h1 className="text-2xl font-bold text-[#0f172a] tracking-tight">CRM ON8</h1>
+          <p className="text-gray-500 text-sm mt-1">Gestor de Leads Multi-Empresa</p>
         </div>
         <button
           onClick={() => signIn("google", { callbackUrl: "/on8-living/dashboard" })}
@@ -41,6 +49,12 @@ export default function LoginPage() {
           </svg>
           Entrar com Google
         </button>
+
+        <div className="mt-8 flex items-center justify-center gap-4">
+          <Image src="/logos/on8-living.jpg" alt="ON8 Living" width={32} height={32} className="rounded-md opacity-50" />
+          <Image src="/logos/on8-it.jpg" alt="ON8 IT" width={32} height={32} className="rounded-md opacity-50" />
+          <Image src="/logos/habiteight.jpg" alt="Habiteight" width={32} height={32} className="rounded-md opacity-50" />
+        </div>
       </div>
     </div>
   );

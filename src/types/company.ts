@@ -3,6 +3,7 @@ export interface CompanyConfig {
   name: string;
   sheetId: string | null;
   color: string;
+  logo: string;
   isParent?: boolean;
   zones?: Record<string, [number, number]>;
 }
