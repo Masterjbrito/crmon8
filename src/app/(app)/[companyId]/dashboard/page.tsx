@@ -1,6 +1,7 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { useState } from "react";
+import { useParams, useRouter } from "next/navigation";
 import { useLeads } from "@/hooks/useLeads";
 import { useCompany } from "@/hooks/useCompany";
 import StatsTicker from "@/components/dashboard/StatsTicker";
@@ -8,12 +9,15 @@ import LeadsMap from "@/components/dashboard/LeadsMap";
 import QuickActions from "@/components/dashboard/QuickActions";
 import AlertsList from "@/components/dashboard/AlertsList";
 import FunnelChart from "@/components/dashboard/FunnelChart";
+import NewLeadForm from "@/components/leads/NewLeadForm";
 import { SkeletonDashboard } from "@/components/ui/Skeleton";
 
 export default function CompanyDashboard() {
   const { companyId } = useParams<{ companyId: string }>();
-  const { leads, loading, error } = useLeads(companyId);
+  const { leads, loading, error, refetch } = useLeads(companyId);
   const { company } = useCompany();
+  const router = useRouter();
+  const [showNewLead, setShowNewLead] = useState(false);
 
   if (loading) return <SkeletonDashboard />;
 
@@ -42,11 +46,32 @@ export default function CompanyDashboard() {
       <div className="dashboard-container">
         <LeadsMap leads={leads} />
         <div className="card-on8">
-          <QuickActions />
+          <QuickActions
+            onNewLead={() => setShowNewLead(true)}
+            onGoToLeads={() => router.push(`/${companyId}/leads`)}
+          />
           <AlertsList leads={leads} />
         </div>
         <FunnelChart leads={leads} />
       </div>
+
+      {/* Floating button */}
+      <button
+        onClick={() => setShowNewLead(true)}
+        className="btn-create-lead flex items-center gap-2"
+      >
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+        </svg>
+        NOVA LEAD MANUAL
+      </button>
+
+      <NewLeadForm
+        companyId={companyId}
+        open={showNewLead}
+        onClose={() => setShowNewLead(false)}
+        onCreated={refetch}
+      />
     </div>
   );
 }

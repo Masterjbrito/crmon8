@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useLeads } from "@/hooks/useLeads";
 import StatsTicker from "@/components/dashboard/StatsTicker";
 import LeadsMap from "@/components/dashboard/LeadsMap";
@@ -8,9 +9,11 @@ import QuickActions from "@/components/dashboard/QuickActions";
 import AlertsList from "@/components/dashboard/AlertsList";
 import FunnelChart from "@/components/dashboard/FunnelChart";
 import { COMPANIES } from "@/lib/companies.config";
+import { toast } from "sonner";
 
 export default function GroupDashboard() {
   const { leads, loading } = useLeads("on8");
+  const router = useRouter();
 
   if (loading) {
     return (
@@ -30,7 +33,10 @@ export default function GroupDashboard() {
       <div className="dashboard-container">
         <LeadsMap leads={leads} />
         <div className="card-on8">
-          <QuickActions />
+          <QuickActions
+            onNewLead={() => toast.info("Seleciona uma empresa para criar leads.")}
+            onGoToLeads={() => router.push("/on8-living/leads")}
+          />
           <AlertsList leads={leads} />
           <div className="mt-4">
             <h6 className="font-bold mb-2 text-gray-500 text-xs uppercase">
@@ -41,7 +47,8 @@ export default function GroupDashboard() {
               return (
                 <div
                   key={c.id}
-                  className="flex items-center justify-between py-2 border-b border-gray-100"
+                  className="flex items-center justify-between py-2 border-b border-gray-100 cursor-pointer hover:bg-gray-50 rounded px-1"
+                  onClick={() => router.push(`/${c.id}/dashboard`)}
                 >
                   <div className="flex items-center gap-2.5 text-sm">
                     <Image

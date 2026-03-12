@@ -242,6 +242,64 @@ export async function registerHistory(
   });
 }
 
+// Creates a new lead row in Folha1 (mirrors extrairLeadsDinamico from GAS)
+export async function createLead(
+  accessToken: string,
+  sheetId: string,
+  data: Record<string, string>
+): Promise<void> {
+  const sheets = getSheets(accessToken);
+
+  // Get headers to know column order
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId: sheetId,
+    range: "Folha1!1:1",
+  });
+
+  const headers = res.data.values?.[0] || [
+    "Data Receção", "ID Lead", "Name", "Email", "Phone",
+    "Situation", "Zone", "Typology", "Construction method",
+    "Timeframe", "Budget", "Preferred contact", "Preferred time",
+  ];
+
+  // Get last row to calculate next ID (like GAS proximoNumero)
+  const allData = await sheets.spreadsheets.values.get({
+    spreadsheetId: sheetId,
+    range: "Folha1",
+  });
+
+  const rows = allData.data.values || [];
+  let nextNumber = 8000;
+  if (rows.length > 1) {
+    const lastIdCol = rows[rows.length - 1][1] || "";
+    const match = lastIdCol.match(/\d+/);
+    nextNumber = match ? parseInt(match[0]) + 1 : 8000 + rows.length - 1;
+  }
+
+  const nome = data.Name || "Cliente";
+  const zona = data.Zone || "Portugal";
+  const idFormatado = `LEAD ${nextNumber} - ${nome} - ${zona}`;
+  const dataRececao = format(new Date(), "dd/MM/yyyy HH:mm");
+
+  // Build row matching headers
+  const row = headers.map((col: string) => {
+    if (col === "Data Receção") return dataRececao;
+    if (col === "ID Lead") return idFormatado;
+    if (col === "Status") return "Pendente";
+    return data[col] || "";
+  });
+
+  await sheets.spreadsheets.values.append({
+    spreadsheetId: sheetId,
+    range: "Folha1!A1",
+    valueInputOption: "RAW",
+    requestBody: { values: [row] },
+  });
+
+  // Register in history
+  await registerHistory(accessToken, sheetId, idFormatado, "SISTEMA", "Lead criada manualmente via CRM");
+}
+
 function colLetter(index: number): string {
   let letter = "";
   let i = index;
