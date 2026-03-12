@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Lead } from "@/types/lead";
 import LeadDetailsPanel from "./LeadDetailsPanel";
 
@@ -15,6 +15,7 @@ function getStatusColor(status: string): string {
     Pendente: "#ff9800",
     Contactado: "#2563eb",
     "Visita Técnica": "#6366f1",
+    "Em Orçamentação": "#3b82f6",
     Adjudicado: "#10b981",
   };
   return colors[status] || "#64748b";
@@ -22,29 +23,44 @@ function getStatusColor(status: string): string {
 
 export default function LeadsTable({ leads, companyId, onRefresh }: Props) {
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  // Debounce search input
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search]);
 
   const filtered = leads.filter((l) => {
-    const q = search.toLowerCase();
+    const q = debouncedSearch.toLowerCase();
+    if (!q) return true;
     return (
       (l.Name || "").toLowerCase().includes(q) ||
       (l["ID Lead"] || "").toLowerCase().includes(q) ||
       (l.Zone || "").toLowerCase().includes(q) ||
-      (l.Status || "").toLowerCase().includes(q)
+      (l.Status || "").toLowerCase().includes(q) ||
+      (l.Email || "").toLowerCase().includes(q)
     );
   });
 
   return (
     <>
       <div className="card-on8">
-        <div className="flex justify-between items-center mb-4">
-          <h5 className="font-bold text-lg">Gestão de Leads</h5>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+          <h5 className="font-bold text-lg">
+            Gestão de Leads
+            <span className="ml-2 text-sm font-normal text-gray-400">
+              ({filtered.length}{debouncedSearch ? ` de ${leads.length}` : ""})
+            </span>
+          </h5>
           <input
             type="text"
             placeholder="Procurar lead..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm w-full sm:w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
         <div className="table-leads overflow-x-auto">
@@ -53,9 +69,9 @@ export default function LeadsTable({ leads, companyId, onRefresh }: Props) {
               <tr className="bg-gray-50 text-left text-xs font-semibold text-gray-500 uppercase">
                 <th className="p-3">Data</th>
                 <th className="p-3">Lead / Nome</th>
-                <th className="p-3">Zona</th>
+                <th className="p-3 hidden md:table-cell">Zona</th>
                 <th className="p-3">Status</th>
-                <th className="p-3">Ações</th>
+                <th className="p-3 w-16">Ações</th>
               </tr>
             </thead>
             <tbody>
@@ -74,7 +90,7 @@ export default function LeadsTable({ leads, companyId, onRefresh }: Props) {
                     <div className="font-bold text-sm">{lead.Name || "S/ Nome"}</div>
                     <div className="text-xs text-gray-400">{lead["ID Lead"]}</div>
                   </td>
-                  <td className="p-3">
+                  <td className="p-3 hidden md:table-cell">
                     <span className="inline-block bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded border">
                       {lead.Zone || "---"}
                     </span>
@@ -100,7 +116,9 @@ export default function LeadsTable({ leads, companyId, onRefresh }: Props) {
               {filtered.length === 0 && (
                 <tr>
                   <td colSpan={5} className="p-8 text-center text-gray-400">
-                    Sem leads encontradas.
+                    {debouncedSearch
+                      ? `Nenhuma lead encontrada para "${debouncedSearch}"`
+                      : "Sem leads."}
                   </td>
                 </tr>
               )}

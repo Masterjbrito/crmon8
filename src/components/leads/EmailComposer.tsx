@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Lead } from "@/types/lead";
+import { toast } from "sonner";
 
 interface Props {
   lead: Lead;
@@ -15,7 +16,7 @@ export default function EmailComposer({ lead, companyId, onSent }: Props) {
 
   const handleSend = async () => {
     if (!lead.Email || !body.trim()) {
-      alert("Preenche o email do lead e a mensagem.");
+      toast.warning("Preenche o email do lead e a mensagem.");
       return;
     }
 
@@ -35,12 +36,13 @@ export default function EmailComposer({ lead, companyId, onSent }: Props) {
 
       if (res.ok) {
         setBody("");
+        toast.success("Email enviado com sucesso!");
         onSent();
       } else {
-        alert("Erro ao enviar email.");
+        toast.error("Erro ao enviar email.");
       }
     } catch {
-      alert("Erro ao enviar email.");
+      toast.error("Erro ao enviar email.");
     } finally {
       setSending(false);
     }

@@ -3,10 +3,12 @@
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useCompany } from "@/hooks/useCompany";
+import { useLeads } from "@/hooks/useLeads";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 
 export default function CompanySwitcher() {
-  const { company, companies, setCompany } = useCompany();
+  const { company, companies, currentCompanyId, setCompany } = useCompany();
+  const { leads } = useLeads(currentCompanyId);
   const router = useRouter();
 
   const handleSelect = (id: string) => {
@@ -28,6 +30,11 @@ export default function CompanySwitcher() {
             style={{ backgroundColor: company?.color }}
           />
           {company?.name || "Selecionar"}
+          {leads.length > 0 && (
+            <span className="bg-white/20 text-[0.65rem] px-1.5 py-0.5 rounded-full">
+              {leads.length}
+            </span>
+          )}
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
           </svg>
@@ -56,6 +63,11 @@ export default function CompanySwitcher() {
               {c.isParent && (
                 <span className="ml-auto text-[0.65rem] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">
                   Grupo
+                </span>
+              )}
+              {!c.sheetId && !c.isParent && (
+                <span className="ml-auto text-[0.6rem] text-gray-300">
+                  sem dados
                 </span>
               )}
             </DropdownMenu.Item>

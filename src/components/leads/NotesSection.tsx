@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 interface Note {
   data: string;
@@ -41,7 +42,10 @@ export default function NotesSection({ leadId, companyId }: Props) {
 
   // BUG #1 FIX: saveInternalNote now calls POST /api/notes
   const handleSave = async () => {
-    if (!newNote.trim()) return;
+    if (!newNote.trim()) {
+      toast.warning("Escreve uma nota primeiro.");
+      return;
+    }
 
     setSaving(true);
     try {
@@ -53,12 +57,13 @@ export default function NotesSection({ leadId, companyId }: Props) {
 
       if (res.ok) {
         setNewNote("");
+        toast.success("Nota guardada com sucesso!");
         await fetchNotes();
       } else {
-        alert("Erro ao guardar nota.");
+        toast.error("Erro ao guardar nota.");
       }
     } catch {
-      alert("Erro ao guardar nota.");
+      toast.error("Erro ao guardar nota.");
     } finally {
       setSaving(false);
     }
@@ -82,9 +87,16 @@ export default function NotesSection({ leadId, companyId }: Props) {
       </button>
 
       {loading ? (
-        <p className="text-sm text-gray-400">A carregar notas...</p>
+        <div className="space-y-2 animate-pulse">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="h-16 bg-gray-100 rounded-lg" />
+          ))}
+        </div>
       ) : notes.length === 0 ? (
-        <p className="text-sm text-gray-400">Sem notas.</p>
+        <div className="text-center py-6">
+          <div className="text-3xl opacity-20 mb-2">📝</div>
+          <p className="text-sm text-gray-400">Sem notas para esta lead.</p>
+        </div>
       ) : (
         <div className="space-y-2">
           {notes.map((n, i) => (

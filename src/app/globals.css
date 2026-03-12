@@ -133,7 +133,25 @@ body {
 
 @media (max-width: 1200px) {
   .dashboard-container {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-container {
     grid-template-columns: 1fr;
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .navbar-on8 {
+    padding: 0.5rem 1rem;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .icon-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
