@@ -8,6 +8,7 @@ interface Props {
   leads: Lead[];
   companyId: string;
   onRefresh: () => void;
+  initialLeadId?: string;
 }
 
 function getStatusColor(status: string): string {
@@ -21,7 +22,7 @@ function getStatusColor(status: string): string {
   return colors[status] || "#64748b";
 }
 
-export default function LeadsTable({ leads, companyId, onRefresh }: Props) {
+export default function LeadsTable({ leads, companyId, onRefresh, initialLeadId }: Props) {
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
@@ -32,6 +33,14 @@ export default function LeadsTable({ leads, companyId, onRefresh }: Props) {
     const timer = setTimeout(() => setDebouncedSearch(search), 300);
     return () => clearTimeout(timer);
   }, [search]);
+
+  // Auto-open lead from URL param
+  useEffect(() => {
+    if (initialLeadId && leads.length > 0 && !selectedLead) {
+      const match = leads.find((l) => l["ID Lead"] === initialLeadId);
+      if (match) setSelectedLead(match);
+    }
+  }, [initialLeadId, leads]);
 
   const filtered = leads.filter((l) => {
     // Status filter

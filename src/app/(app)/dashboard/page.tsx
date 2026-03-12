@@ -41,7 +41,7 @@ export default function GroupDashboard() {
           leads={leads}
           onSelectLead={(lead) => {
             const cId = lead.companyId || "on8-living";
-            router.push(`/${cId}/leads`);
+            router.push(`/${cId}/leads?leadId=${encodeURIComponent(lead["ID Lead"])}`);
           }}
         />
           <div className="mt-4">

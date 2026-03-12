@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { useLeads } from "@/hooks/useLeads";
 import { useCompany } from "@/hooks/useCompany";
 import LeadsTable from "@/components/leads/LeadsTable";
@@ -10,6 +10,8 @@ import { SkeletonTable } from "@/components/ui/Skeleton";
 
 export default function LeadsPage() {
   const { companyId } = useParams<{ companyId: string }>();
+  const searchParams = useSearchParams();
+  const initialLeadId = searchParams.get("leadId") || undefined;
   const { leads, loading, error, refetch } = useLeads(companyId);
   const { company } = useCompany();
   const [showNewLead, setShowNewLead] = useState(false);
@@ -36,7 +38,7 @@ export default function LeadsPage() {
 
   return (
     <div className="p-4">
-      <LeadsTable leads={leads} companyId={companyId} onRefresh={refetch} />
+      <LeadsTable leads={leads} companyId={companyId} onRefresh={refetch} initialLeadId={initialLeadId} />
 
       <button
         onClick={() => setShowNewLead(true)}
