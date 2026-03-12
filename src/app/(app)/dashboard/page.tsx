@@ -37,7 +37,13 @@ export default function GroupDashboard() {
             onNewLead={() => toast.info("Seleciona uma empresa para criar leads.")}
             onGoToLeads={() => router.push("/on8-living/leads")}
           />
-          <AlertsList leads={leads} />
+          <AlertsList
+          leads={leads}
+          onSelectLead={(lead) => {
+            const cId = lead.companyId || "on8-living";
+            router.push(`/${cId}/leads`);
+          }}
+        />
           <div className="mt-4">
             <h6 className="font-bold mb-2 text-gray-500 text-xs uppercase">
               Leads por Empresa

@@ -10,7 +10,9 @@ import QuickActions from "@/components/dashboard/QuickActions";
 import AlertsList from "@/components/dashboard/AlertsList";
 import FunnelChart from "@/components/dashboard/FunnelChart";
 import NewLeadForm from "@/components/leads/NewLeadForm";
+import LeadDetailsPanel from "@/components/leads/LeadDetailsPanel";
 import { SkeletonDashboard } from "@/components/ui/Skeleton";
+import { Lead } from "@/types/lead";
 
 export default function CompanyDashboard() {
   const { companyId } = useParams<{ companyId: string }>();
@@ -18,6 +20,7 @@ export default function CompanyDashboard() {
   const { company } = useCompany();
   const router = useRouter();
   const [showNewLead, setShowNewLead] = useState(false);
+  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
 
   if (loading) return <SkeletonDashboard />;
 
@@ -50,7 +53,7 @@ export default function CompanyDashboard() {
             onNewLead={() => setShowNewLead(true)}
             onGoToLeads={() => router.push(`/${companyId}/leads`)}
           />
-          <AlertsList leads={leads} />
+          <AlertsList leads={leads} onSelectLead={setSelectedLead} />
         </div>
         <FunnelChart leads={leads} />
       </div>
@@ -72,6 +75,15 @@ export default function CompanyDashboard() {
         onClose={() => setShowNewLead(false)}
         onCreated={refetch}
       />
+
+      {selectedLead && (
+        <LeadDetailsPanel
+          lead={selectedLead}
+          companyId={companyId}
+          onClose={() => setSelectedLead(null)}
+          onRefresh={refetch}
+        />
+      )}
     </div>
   );
 }
