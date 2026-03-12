@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useLeads } from "@/hooks/useLeads";
-import { useCompany } from "@/hooks/useCompany";
+import { useCompanyStore } from "@/store/company-store";
+import { getCompany } from "@/lib/companies.config";
 import StatsTicker from "@/components/dashboard/StatsTicker";
 import LeadsMap from "@/components/dashboard/LeadsMap";
 import QuickActions from "@/components/dashboard/QuickActions";
@@ -17,7 +18,11 @@ import { Lead } from "@/types/lead";
 export default function CompanyDashboard() {
   const { companyId } = useParams<{ companyId: string }>();
   const { leads, loading, error, refetch } = useLeads(companyId);
-  const { company } = useCompany();
+  const company = getCompany(companyId);
+  const setCompany = useCompanyStore((s) => s.setCompany);
+
+  // Sync store with URL param
+  useEffect(() => { setCompany(companyId); }, [companyId, setCompany]);
   const router = useRouter();
   const [showNewLead, setShowNewLead] = useState(false);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);

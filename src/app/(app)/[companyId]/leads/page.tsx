@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { useLeads } from "@/hooks/useLeads";
-import { useCompany } from "@/hooks/useCompany";
+import { useCompanyStore } from "@/store/company-store";
+import { getCompany } from "@/lib/companies.config";
 import LeadsTable from "@/components/leads/LeadsTable";
 import NewLeadForm from "@/components/leads/NewLeadForm";
 import { SkeletonTable } from "@/components/ui/Skeleton";
@@ -13,7 +14,11 @@ export default function LeadsPage() {
   const searchParams = useSearchParams();
   const initialLeadId = searchParams.get("leadId") || undefined;
   const { leads, loading, error, refetch } = useLeads(companyId);
-  const { company } = useCompany();
+  const company = getCompany(companyId);
+  const setCompany = useCompanyStore((s) => s.setCompany);
+
+  // Sync store with URL param
+  useEffect(() => { setCompany(companyId); }, [companyId, setCompany]);
   const [showNewLead, setShowNewLead] = useState(false);
 
   if (loading) return <div className="p-4"><SkeletonTable /></div>;
